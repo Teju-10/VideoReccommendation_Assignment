@@ -41,7 +41,6 @@ def preprocess_data(username):
 def recommend_posts(username, top_n=5):
     """
     Recommends posts based on the user's preferences or popular posts as a fallback.
-    If the user is not found, no posts are recommended.
     """
     user_preferences, user_id = preprocess_data(username)
     
@@ -65,29 +64,52 @@ def recommend_posts(username, top_n=5):
             print()
         return
 
+    # Debug: Check the combined features
+    print("User Preferences Combined Features:\n", user_preferences["combined_features"])
+
     # Create a combined features column for all posts
     posts_df["combined_features"] = posts_df["title"].fillna("") + " " + \
                                      posts_df["post_summary.emotions.overall_sentiment"].fillna("") + " " + \
                                      posts_df["post_summary.actions.coin_rotation"].fillna("")
-
-    vectorizer = TfidfVectorizer(stop_words="english")
-    post_features = vectorizer.fit_transform(posts_df["combined_features"])
     
-    # If there are no preferences, stop execution
+    # Debug: Check all posts combined features
+    print("All Posts Combined Features:\n", posts_df["combined_features"].head())
+
+    # Ensure TF-IDF can process the data
+    vectorizer = TfidfVectorizer(stop_words="english")
+    try:
+        post_features = vectorizer.fit_transform(posts_df["combined_features"])
+    except ValueError as e:
+        print(f"Error in TF-IDF vectorization: {e}")
+        return
+
+    # If there are no valid features, stop execution
     if user_preferences["combined_features"].empty:
         print(f"User preferences have no valid features.")
         return
 
+    # Transform user preferences using the same vectorizer
+    try:
+        user_pref_features = vectorizer.transform(user_preferences["combined_features"])
+    except ValueError as e:
+        print(f"Error in TF-IDF vectorization for user preferences: {e}")
+        return
+
     # Calculate similarity
-    user_pref_features = vectorizer.transform(user_preferences["combined_features"])
     similarity_scores = cosine_similarity(user_pref_features, post_features)
     
+    # Debug: Check similarity scores
+    print("Similarity Scores:\n", similarity_scores)
+
     # Get top N recommendations
     mean_similarity = similarity_scores.mean(axis=0)
     recommended_indices = mean_similarity.argsort()[-top_n:][::-1]
     recommended_posts = posts_df.iloc[recommended_indices]
     
-    # Display recommendations with explanations
+    # Debug: Check recommended indices
+    print("Recommended Indices:\n", recommended_indices)
+
+    # Display recommendations
     print(f"Recommendations for {username}:")
     for idx, post in recommended_posts.iterrows():
         reason = "similar content or sentiment"  # Modify this based on the actual features used
