@@ -94,9 +94,9 @@ def recommend_posts(username, top_n=5):
         print(f"Post Title: {post['title']} (Reason: You liked posts with {reason})")
         print(f"Sentiment: {post['post_summary.emotions.overall_sentiment']}")
         print(f"Coin Rotation Action: {post['post_summary.actions.coin_rotation']}")
-        print(f"Link: {post['slug']}")  # Assuming 'slug' is the URL or identifier
+        print(f"Link: {post['slug']}")
         print()
 
 # Example usage
-username_input = "maya"
-recommend_posts(username_input, top_n=5)
+username_input = "kinha"
+recommend_posts(username_input, top_n=10) 
